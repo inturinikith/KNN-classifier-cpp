@@ -1,4 +1,4 @@
-#include "KNN.h"
+#include "knn.h"
 
 #include <algorithm>
 #include <map>
