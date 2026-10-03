@@ -1,15 +1,23 @@
+#pragma once
+
 #include <vector>
 #include <string>
+#include "datapoint.h"
+#include "dataset.h"
+#include "distance.h"
+
 using namespace std;
-class KNN{
+
+class KNN {
 private:
     int k;
-    vector<vector<double>> x_train;
-    vector<string> y_train;
-    double euclideanDistance(const vector<double>& a,const vector<double>& b) const;
+    vector<Datapoint> train_points;
+    const Distance* metric;
+
 public:
-    KNN(int k);
-    void fit(const vector<vector<double>>& x,
-             const vector<string>& y);
-     string predict(const vector<double>& x) const;
+    KNN(int k, const Distance& metric);
+
+    void fit(TrainDataSet& train_set);
+
+    string predict(Datapoint& test_point) const;
 };
