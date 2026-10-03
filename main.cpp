@@ -25,7 +25,6 @@ bool load_iris(const string& path,
 
     string line;
 
-    // Skip header
     getline(file, line);
 
     while (getline(file, line)) {
@@ -39,18 +38,16 @@ bool load_iris(const string& path,
         stringstream ss(line);
         string cell;
 
-        // Skip ID
+      
         getline(ss, cell, ',');
 
         vector<double> row;
 
-        // Read four features
         for (int i = 0; i < 4; i++) {
             getline(ss, cell, ',');
             row.push_back(stod(cell));
         }
 
-        // Read label
         getline(ss, cell, ',');
 
         X.push_back(row);
@@ -95,7 +92,7 @@ int main(int argc, char* argv[]) {
     vector<vector<double>> X;
     vector<string> y;
 
-    // Load dataset
+
     if (!load_iris(path, X, y)) {
 
         cerr << "Could not open "
@@ -110,7 +107,7 @@ int main(int argc, char* argv[]) {
          << n
          << " samples.\n";
 
-    // Create shuffled indexes
+
     vector<int> idx(n);
 
     iota(idx.begin(), idx.end(), 0);
@@ -119,7 +116,6 @@ int main(int argc, char* argv[]) {
 
     shuffle(idx.begin(), idx.end(), rng);
 
-    // 80% training, 20% testing
     int n_train = static_cast<int>(0.8 * n);
 
     vector<vector<double>> train_X;
@@ -150,7 +146,6 @@ int main(int argc, char* argv[]) {
          << n_test
          << "\n\n";
 
-    // Create datasets
     TrainDataSet train_set(train_X, train_y);
 
     TestDataSet test_set(
@@ -159,7 +154,6 @@ int main(int argc, char* argv[]) {
         train_set
     );
 
-    // Get K from user
     int k = read_int(
         "Enter K (1-" +
         to_string(n_train) +
@@ -168,20 +162,16 @@ int main(int argc, char* argv[]) {
         n_train
     );
 
-    // Create Euclidean distance object
     Euclidean euclidean;
 
-    // Create KNN
     KNN knn(k, euclidean);
 
-    // Give training data to KNN
     knn.fit(train_set);
 
     int correct = 0;
 
     map<string, map<string, int>> confusion;
 
-    // Predict every test point
     for (int i = 0; i < n_test; i++) {
 
         vector<double> features = test_X[i];
@@ -203,7 +193,6 @@ int main(int argc, char* argv[]) {
             correct++;
     }
 
-    // Results
     cout << "\nK = "
          << k
          << "\n";
