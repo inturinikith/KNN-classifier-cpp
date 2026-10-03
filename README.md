@@ -1,95 +1,106 @@
-# MiniKNN: a K-Nearest-Neighbours classifier in C++
+# MiniKNN: K-Nearest-Neighbours Classifier in C++
 
-MiniKNN classifies Iris flowers by looking at the flowers that are most similar to them. It is built with object-oriented C++ (inheritance, polymorphism, abstraction, encapsulation and composition) and tested on the 150-row Iris dataset.
+MiniKNN is a small machine learning library written in C++. It uses the **K-Nearest-Neighbours (KNN)** algorithm to predict the species of an Iris flower from four measurements. The project is built with object-oriented programming: classes, inheritance, abstract classes and polymorphism.
 
-**Course project:** DSAI, IIIT Bangalore (2nd year) | **Team:** Srujan, Nikunj, Nikith, Susheel
+## What is KNN?
+KNN classifies a new data point by looking at the points that are most similar to it.
 
-## Table of contents
-1. [How KNN works](#how-knn-works)
-2. [Team and responsibilities](#team-and-responsibilities)
-3. [Project structure](#project-structure)
-4. [Build and run](#build-and-run)
-5. [Dataset format](#dataset-format)
-6. [Class overview](#class-overview)
-7. [UML diagram](#uml-diagram)
-8. [Design decisions](#design-decisions)
-9. [Sample output](#sample-output)
-10. [Known issues and fixes](#known-issues-and-fixes)
-11. [Possible extensions](#possible-extensions)
-12. [Viva questions](#viva-questions)
+1. Measure the **distance** from the new flower to every flower in the training data.
+2. Pick the **K closest** flowers (the neighbours).
+3. Let the neighbours **vote**. The species that appears most often is the prediction.
 
-## How KNN works
-To classify a new flower:
-1. Measure its **distance** to every flower in the training set.
-2. Pick the **K closest** ones.
-3. Let those K neighbours **vote**. The most common species wins.
+**Example:** with K = 5, if the 5 nearest flowers are 4 versicolor and 1 virginica, the prediction is *versicolor*.
 
-There is no real "training" step. KNN just remembers the training data, which is why it is called a *lazy learner*.
+KNN has no real training step. It just stores the training data and does the work when predicting, which is why it is called a *lazy learner*.
 
-Before measuring distances, every feature is **standardised** (mean 0, variance 1), so a feature with large numbers cannot dominate the distance. The test data is standardised using the **training** mean and variance, which stops information leaking from the test set.
+## Dataset
+We use the **Iris dataset**: 150 flowers, 3 species (50 each).
 
-**Pipeline in `main`:** load CSV, shuffle with a fixed seed (42), split 80% train / 20% test, build `TrainDataSet` and `TestDataSet`, ask for K, fit `KNN`, predict each test flower, print accuracy and a confusion matrix.
+| Feature | Meaning |
+|---|---|
+| SepalLengthCm | Length of the sepal |
+| SepalWidthCm | Width of the sepal |
+| PetalLengthCm | Length of the petal |
+| PetalWidthCm | Width of the petal |
+| Species | Iris-setosa, Iris-versicolor or Iris-virginica (the label we predict) |
 
-## Team and responsibilities
-
-| Member | Part | Files |
-|---|---|---|
-| **Susheel** | Datasets and data points | `dataset.h`, `datapoint.h` |
-| **Srujan** | Distance metrics, UML diagrams, documentation | `distance.h`, `diagrams/`, `UML.md`, this README |
-| **Nikith** | KNN classifier | `knn.h`, `knn.cpp` |
-| **Nikunj** | `main` function | `main.cpp` |
-
-## Project structure
-```
-MiniKNN/
-├── main.cpp        # loads data, splits, runs KNN, prints results   (Nikunj)
-├── knn.h           # KNN class declaration                          (Nikith)
-├── knn.cpp         # fit() and predict()                            (Nikith)
-├── distance.h      # Distance, Euclidean, Manhattan                 (Srujan)
-├── datapoint.h     # Datapoint: one row + standardised features     (Susheel)
-├── dataset.h       # DataSet, TrainDataSet, TestDataSet             (Susheel)
-├── Iris.csv        # the dataset (150 rows)
-├── UML.md          # all class diagrams
-├── diagrams/       # Mermaid source for every diagram
-└── README.md
-```
-
-## Build and run
-Requires a C++17 compiler (`main.cpp` uses structured bindings).
-
-```bash
-g++ -std=c++17 -Wall -Wextra main.cpp knn.cpp -o miniknn
-./miniknn Iris.csv      # or just ./miniknn if Iris.csv is in the same folder
-```
-
-The program prints the dataset sizes, then asks for **K** (1 to the training size, 120). Invalid input is rejected and asked again.
-
-## Dataset format
-`load_iris` expects the common Kaggle layout. The first line is a header and is skipped.
+The CSV file looks like this. The first line is a header and is skipped, and the `Id` column is ignored:
 
 ```
 Id,SepalLengthCm,SepalWidthCm,PetalLengthCm,PetalWidthCm,Species
 1,5.1,3.5,1.4,0.2,Iris-setosa
+2,4.9,3.0,1.4,0.2,Iris-setosa
 ```
 
-Each row is read as: skip `Id`, read 4 numeric features, read the species label. Windows line endings (`\r`) are handled. The loader returns `false` if the file cannot be opened.
+## How the program runs
+1. **Load** `Iris.csv`.
+2. **Shuffle** the rows with a fixed seed (42), so results are the same every run.
+3. **Split** into 80% training (120 flowers) and 20% test (30 flowers).
+4. **Standardise** the features (explained below).
+5. Ask the user for **K**.
+6. **Predict** the species of every test flower.
+7. Print the **accuracy** and a **confusion matrix**.
 
-## Class overview
+### Why standardise?
+Features can have different ranges, and a feature with big numbers would dominate the distance. Standardising rescales every feature to mean 0 and variance 1:
 
-| Class | Kind | Responsibility |
-|---|---|---|
-| `DataSet` | base class | Stores samples and labels, transposes them into per-feature columns, computes mean and variance per feature. Getters only, so the data is encapsulated. |
-| `TrainDataSet` | derives `DataSet` | Computes mean and variance from its own data. |
-| `TestDataSet` | derives `DataSet` | Copies mean and variance from a `TrainDataSet`, so test data is scaled like the training data. |
-| `Datapoint` | class | One flower: raw `features`, `label`, and `stand_features` (standardised using its `DataSet`). `distance_to(other, metric)` delegates to a `Distance`. |
-| `Distance` | abstract class | Interface with one pure virtual function `calculate(a, b)`. |
-| `Euclidean` | derives `Distance` | Square root of the sum of squared differences. |
-| `Manhattan` | derives `Distance` | Sum of absolute differences. |
-| `KNN` | class | `fit` copies the training points in, `predict` finds the K nearest and votes. Holds a `const Distance*`, so the metric can be swapped without touching `KNN`. |
-| `main.cpp` | program | `load_iris`, `read_int` and `main`: the CLI and the experiment. |
+```
+standardised value = (value - mean) / sqrt(variance)
+```
 
-## UML diagram
-The whole project is shown below. The individual diagrams (data layer, distance, KNN, main) are in [`UML.md`](UML.md), and their Mermaid sources are in `diagrams/`.
+The mean and variance always come from the **training** data, even when scaling the test data. This keeps the test set "unseen", like real new data.
+
+## Project structure
+```
+MiniKNN/
+├── main.cpp       # loads data, splits it, runs KNN, prints results
+├── knn.h          # KNN class declaration
+├── knn.cpp        # KNN fit() and predict()
+├── distance.h     # Distance (abstract), Euclidean, Manhattan
+├── datapoint.h    # Datapoint class (one flower)
+├── dataset.h      # DataSet, TrainDataSet, TestDataSet
+├── Iris.csv       # the dataset
+├── UML.md         # all UML class diagrams
+├── diagrams/      # Mermaid source files for the diagrams
+└── README.md
+```
+
+## The classes
+
+### Data layer (`dataset.h`, `datapoint.h`)
+- **`DataSet`** is the base class. It stores the samples and labels, rearranges them into one list per feature, and calculates the mean and variance of each feature. Its data is hidden and accessed only through getters.
+- **`TrainDataSet`** inherits from `DataSet` and calculates mean and variance from its own data.
+- **`TestDataSet`** inherits from `DataSet` and **copies** the mean and variance from a `TrainDataSet`.
+- **`Datapoint`** represents one flower. It keeps the raw `features`, the `label`, and the standardised features (`stand_features`). Its `distance_to(other, metric)` function asks a `Distance` object to do the calculation.
+
+### Distance (`distance.h`)
+- **`Distance`** is an **abstract class** with one pure virtual function, `calculate(a, b)`.
+- **`Euclidean`** returns the straight-line distance: the square root of the sum of squared differences.
+- **`Manhattan`** returns the "city block" distance: the sum of absolute differences.
+
+New metrics can be added by writing one more class that inherits from `Distance`. Nothing else needs to change.
+
+### Classifier (`knn.h`, `knn.cpp`)
+- **`KNN(k, metric)`** stores K and a pointer to a `Distance`.
+- **`fit(train_set)`** copies the training flowers into the classifier.
+- **`predict(test_point)`** works out the distance to every training flower, sorts them, takes the first K, counts the votes per species and returns the winner.
+
+### Main (`main.cpp`)
+- **`load_iris`** reads the CSV file into feature and label lists.
+- **`read_int`** asks for a number and keeps asking until the input is valid.
+- **`main`** runs the full pipeline from the section above.
+
+## OOP concepts used
+| Concept | Where |
+|---|---|
+| **Inheritance** | `TrainDataSet` and `TestDataSet` from `DataSet`; `Euclidean` and `Manhattan` from `Distance` |
+| **Abstraction** | `Distance` defines what a distance must do, not how |
+| **Polymorphism** | `KNN` calls `metric->calculate(...)` and the right version runs for Euclidean or Manhattan |
+| **Encapsulation** | Private and protected data with public getters |
+| **Composition** | `KNN` stores its own list of training `Datapoint`s |
+
+## UML class diagram
+The diagram below shows the whole project. The separate diagrams for the data layer, distance, KNN and main are in [UML.md](UML.md).
 
 ```mermaid
 classDiagram
@@ -155,19 +166,19 @@ classDiagram
   Main ..> Euclidean
 ```
 
-**Reading the arrows:** `<|--` is inheritance. `*--` is composition (`KNN` owns its stored training points). `o--` is aggregation (`KNN` points to a `Distance` but does not own it). `-->` is an association (a `Datapoint` refers to its `DataSet`). `..>` is a dependency (uses temporarily).
+How to read it: `<|--` means inheritance, `*--` means "owns", `o--` means "uses but does not own", `-->` means "refers to", and `..>` means "depends on".
 
-## Design decisions
-- **Abstract `Distance` class (Strategy pattern).** `KNN` only knows `Distance`. Switching from Euclidean to Manhattan is a one-line change in `main`, and a new metric needs no edits in `KNN`. This is the open/closed principle.
-- **Polymorphism through a pointer.** `KNN` stores `const Distance*`, so the correct `calculate` is chosen at run time.
-- **Inheritance for datasets.** `TrainDataSet` and `TestDataSet` share almost everything and differ in one thing: where mean and variance come from.
-- **Standardisation with training statistics only.** Prevents data leakage and keeps all features on the same scale.
-- **Encapsulation.** `Datapoint` keeps `features` and `label` private, and `DataSet` keeps its arrays protected with const getters.
-- **Majority voting with a `map<string,int>`.** Simple and readable. On a tie, the label that comes first alphabetically wins, because the map is ordered and only a strictly higher count replaces the current winner.
+## Build and run
+You need a C++ compiler that supports C++17, for example g++.
 
-## Sample output
-Run on the 150-row Iris dataset, seed 42, 120 train / 30 test, Euclidean distance:
+```bash
+g++ -std=c++17 main.cpp knn.cpp -o miniknn
+./miniknn Iris.csv
+```
 
+On Windows, run `miniknn.exe Iris.csv` instead. If you don't pass a file name, the program looks for `Iris.csv` in the current folder. Then type a value for K between 1 and 120 when asked.
+
+## Example output
 ```
 Loaded 150 samples.
 Train: 120  Test: 30
@@ -183,23 +194,35 @@ Confusion matrix (rows = actual, cols = predicted):
   Iris-virginica: Iris-versicolor=2  Iris-virginica=7
 ```
 
-Other values on the same split: K=1 gives 90%, K=5 gives 86.7%. With only 30 test flowers, one mistake moves the accuracy by 3.3 points, so small differences between K values are mostly noise. Setosa was classified perfectly in every run, because it is well separated from the other two species. All errors were between versicolor and virginica, which overlap.
+**Reading the confusion matrix:** each row is the *actual* species and each entry shows what the model predicted. Here, all 7 setosa and all 14 versicolor were correct, and 7 of the 9 virginica were correct, with 2 mistaken for versicolor. Only non-zero cells are printed.
 
-The confusion matrix only prints non-zero cells.
+## Results
+Same split (seed 42), Euclidean distance:
 
-## Known issues and fixes
-Please fix these before submitting.
+| K | Accuracy |
+|---|---|
+| 1 | 90.0% |
+| 5 | 86.7% |
+| 9 | 93.3% |
 
-1. **`knn.cpp` includes `"KNN.h"` but the file is `knn.h`.** This compiles on Windows but fails on Linux and macOS (case-sensitive file systems). Change it to `#include "knn.h"`.
-2. **`distance.h`: use `fabs`, not `abs`.** `abs` on a `double` can call the integer version and drop the decimals, so Manhattan distances come out wrong. Use `std::fabs`. (The current main uses Euclidean, so results above are not affected, but Manhattan would be.) Also add `virtual ~Distance() {}` to the base class.
-3. **Zero variance.** `standardise` divides by `sqrt(variance)`. A feature that is constant in the training data would divide by zero. Not an issue for Iris, but worth a guard.
-4. **Lifetime.** A `Datapoint` holds a *reference* to its `DataSet`, so the dataset must outlive its points. In `main` this is true because the datasets are created first and live until the end.
+Setosa is easy to separate from the other two species. Almost all mistakes are between versicolor and virginica, whose measurements overlap. The test set has only 30 flowers, so one mistake changes the accuracy by about 3.3 points.
 
-## Possible extensions
-- Select the metric at run time (Euclidean or Manhattan) through a menu in `main`.
-- Compare accuracies for K = 1..20 in a loop and print the best K.
-- k-fold cross-validation for a more reliable accuracy than one 30-flower test set.
-- Weighted voting, where closer neighbours count more.
-- Use `std::partial_sort` in `predict`, since only the K smallest distances are needed.
+## Limitations
+- The result depends on one train/test split. A cross-validation would be more reliable.
+- If two species tie in the vote, the one that comes first alphabetically wins.
+- The metric (Euclidean or Manhattan) is chosen in the code, not by the user at run time.
+- `predict` checks every training flower, so it gets slower as the dataset grows.
+
+
+## Team
+IIIT Bangalore, DSAI 2nd year.
+
+| Name | Responsibility |
+|---|---|
+| Susheel | Datasets and data points (`dataset.h`, `datapoint.h`) |
+| Srujan | Distance metrics, UML diagrams, documentation (`distance.h`, `UML.md`, `README.md`) |
+| Nikith | KNN classifier (`knn.h`, `knn.cpp`) |
+| Nikunj | Main function (`main.cpp`) |
+
 
 
