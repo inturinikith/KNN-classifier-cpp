@@ -202,14 +202,4 @@ Please fix these before submitting.
 - Weighted voting, where closer neighbours count more.
 - Use `std::partial_sort` in `predict`, since only the K smallest distances are needed.
 
-## Viva questions
-- Why is `Distance` abstract? What is a pure virtual function?
-- Why does `KNN` hold a pointer to `Distance` and not a `Distance` object? (Object slicing and polymorphism.)
-- What is the difference between composition (`*--`) and aggregation (`o--`) in our diagram?
-- Why standardise features? Why use the *training* mean and variance for the test set?
-- Why do `TrainDataSet` and `TestDataSet` inherit from `DataSet`? What is different between them?
-- What happens on a voting tie? How could we make it fairer?
-- What is the time complexity of `predict`? (O(n·d) for distances plus O(n log n) for the sort.)
-- Why is KNN called a lazy learner?
-- What does a bigger K do to bias and variance?
-- Why is a virtual destructor needed in the base class?
+
