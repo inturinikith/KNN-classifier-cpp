@@ -10,7 +10,7 @@
 #include <limits>
 #include <cstdlib>
 
-#include "KNN.h"
+#include "knn.h"
 
 using namespace std;
 
