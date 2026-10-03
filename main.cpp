@@ -20,21 +20,21 @@ bool load_iris(const string& path, vector<vector<double>>& X, vector<string>& y)
     if(!file.is_open()) return false;
 
     string line;
-    getline(file, line);                          // skip header
+    getline(file, line);                      
     while(getline(file, line)){
         if(!line.empty() && line.back() == '\r') line.pop_back();
         if(line.empty()) continue;
 
         stringstream ss(line);
         string cell;
-        getline(ss, cell, ',');                   // Id column -> ignored
+        getline(ss, cell, ',');                 
 
         vector<double> row;
         for(int i=0; i<4; i++){
             getline(ss, cell, ',');
             row.push_back(stod(cell));
         }
-        getline(ss, cell, ',');                   // Species
+        getline(ss, cell, ',');                   
         X.push_back(row);
         y.push_back(cell);
     }
