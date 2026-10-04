@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <map>
 #include <limits>
+#include <iostream>
 
 using namespace std;
 
@@ -60,15 +61,45 @@ string KNN::predict(Datapoint& test_point) const {
 
         string label = vote.first;
         int count = vote.second;
-        double distance = total_distances[label];
 
-        if (count > max_votes ||
-            (count == max_votes && distance < min_distance)) {
-
+        if (count > max_votes) {
             max_votes = count;
-            min_distance = distance;
             prediction = label;
         }
+    }
+
+    vector<string> tied_classes;
+
+    for (const auto& vote : votes) {
+        if (vote.second == max_votes) {
+            tied_classes.push_back(vote.first);
+        }
+    }
+
+    if (tied_classes.size() > 1) {
+
+        cout << "\nTie breaker happened!\n";
+
+        for (const string& label : tied_classes) {
+            cout << label
+                 << " -> "
+                 << votes[label]
+                 << " votes, total distance = "
+                 << total_distances[label]
+                 << "\n";
+        }
+
+        for (const string& label : tied_classes) {
+
+            if (total_distances[label] < min_distance) {
+                min_distance = total_distances[label];
+                prediction = label;
+            }
+        }
+
+        cout << "Tie breaker winner: "
+             << prediction
+             << "\n";
     }
 
     return prediction;
