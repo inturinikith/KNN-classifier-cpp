@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <map>
+#include <limits>
 
 using namespace std;
 
@@ -27,8 +28,6 @@ string KNN::predict(Datapoint& test_point) const {
 
     vector<pair<double, string>> distances;
 
-    // Calculate distance from test point
-    // to every training point
     for (const Datapoint& point : train_points) {
 
         double distance =
@@ -37,25 +36,38 @@ string KNN::predict(Datapoint& test_point) const {
         distances.push_back({distance, point.get_label()});
     }
 
-    // Sort from smallest distance to largest
     sort(distances.begin(), distances.end());
 
-    // Majority voting
     map<string, int> votes;
+    map<string, double> total_distances;
 
-    for (int i = 0; i < k; i++) {
-        votes[distances[i].second]++;
+    int neighbors = min(k, static_cast<int>(distances.size()));
+
+    for (int i = 0; i < neighbors; i++) {
+
+        string label = distances[i].second;
+        double distance = distances[i].first;
+
+        votes[label]++;
+        total_distances[label] += distance;
     }
 
-    // Find class with maximum votes
     string prediction;
-    int max_votes = 0;
+    int max_votes = -1;
+    double min_distance = numeric_limits<double>::infinity();
 
     for (const auto& vote : votes) {
 
-        if (vote.second > max_votes) {
-            max_votes = vote.second;
-            prediction = vote.first;
+        string label = vote.first;
+        int count = vote.second;
+        double distance = total_distances[label];
+
+        if (count > max_votes ||
+            (count == max_votes && distance < min_distance)) {
+
+            max_votes = count;
+            min_distance = distance;
+            prediction = label;
         }
     }
 
