@@ -87,7 +87,7 @@ int read_int(const string& prompt, int lo, int hi) {
 
 int main(int argc, char* argv[]) {
 
-    string path = (argc > 1) ? argv[1] : "TShirt_size.csv";
+    string path = (argc > 1) ? argv[1] : "Iris.csv";
 
     vector<vector<double>> X;
     vector<string> y;
